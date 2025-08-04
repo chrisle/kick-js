@@ -35,6 +35,12 @@ export const getChannelData = async (
       );
     }
 
+    if (response?.status() === 404) {
+      throw new Error(
+        `Channel '${channel}' does not exist on Kick.com. Please check the channel name and try again.`,
+      );
+    }
+
     await page.waitForSelector("body");
 
     const jsonContent: KickChannelInfo = await page.evaluate(() => {
@@ -42,11 +48,24 @@ export const getChannelData = async (
       if (!bodyElement || !bodyElement.textContent) {
         throw new Error("Unable to fetch channel data");
       }
-      return JSON.parse(bodyElement.textContent);
+      
+      try {
+        return JSON.parse(bodyElement.textContent);
+      } catch (parseError) {
+        // If JSON parsing fails, it might be an error page
+        const textContent = bodyElement.textContent.toLowerCase();
+        if (textContent.includes('not found') || textContent.includes('404')) {
+          throw new Error('Channel not found');
+        }
+        throw parseError;
+      }
     });
 
     return jsonContent;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message.includes('Channel not found') || error.message.includes('does not exist') || error.message.includes('Request blocked by Cloudflare protection')) {
+      throw error; // Re-throw channel not found and Cloudflare protection errors
+    }
     console.error("Error getting channel data:", error);
     return null;
   } finally {
@@ -71,6 +90,12 @@ export const getVideoData = async (
       );
     }
 
+    if (response?.status() === 404) {
+      throw new Error(
+        `Video '${video_id}' does not exist or has been removed from Kick.com.`,
+      );
+    }
+
     await page.waitForSelector("body");
 
     const jsonContent: VideoInfo = await page.evaluate(() => {
@@ -78,11 +103,24 @@ export const getVideoData = async (
       if (!bodyElement || !bodyElement.textContent) {
         throw new Error("Unable to fetch video data");
       }
-      return JSON.parse(bodyElement.textContent);
+      
+      try {
+        return JSON.parse(bodyElement.textContent);
+      } catch (parseError) {
+        // If JSON parsing fails, it might be an error page
+        const textContent = bodyElement.textContent.toLowerCase();
+        if (textContent.includes('not found') || textContent.includes('404')) {
+          throw new Error('Video not found');
+        }
+        throw parseError;
+      }
     });
 
     return jsonContent;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message.includes('Video not found') || error.message.includes('does not exist') || error.message.includes('Request blocked by Cloudflare protection')) {
+      throw error; // Re-throw video not found and Cloudflare protection errors
+    }
     console.error("Error getting video data:", error);
     return null;
   } finally {

@@ -133,9 +133,16 @@ export const createClient = (
         console.log(`Fetching channel data for: ${channelName}`);
       }
 
-      channelInfo = await getChannelData(channelName, mergedOptions.puppeteerOptions);
-      if (!channelInfo) {
-        throw new Error("Unable to fetch channel data");
+      try {
+        channelInfo = await getChannelData(channelName, mergedOptions.puppeteerOptions);
+        if (!channelInfo) {
+          throw new Error(`Unable to fetch channel data for '${channelName}'. Please check if the channel exists.`);
+        }
+      } catch (error: any) {
+        if (error.message.includes('does not exist') || error.message.includes('Channel not found')) {
+          throw new Error(`Channel '${channelName}' does not exist on Kick.com. Please verify the channel name.`);
+        }
+        throw error;
       }
 
       if (mergedOptions.logger) {
@@ -234,10 +241,17 @@ export const createClient = (
       : null;
 
   const vod = async (video_id: string) => {
-    videoInfo = await getVideoData(video_id, mergedOptions.puppeteerOptions);
+    try {
+      videoInfo = await getVideoData(video_id, mergedOptions.puppeteerOptions);
 
-    if (!videoInfo) {
-      throw new Error("Unable to fetch video data");
+      if (!videoInfo) {
+        throw new Error(`Unable to fetch video data for '${video_id}'. Please check if the video exists.`);
+      }
+    } catch (error: any) {
+      if (error.message.includes('does not exist') || error.message.includes('Video not found')) {
+        throw new Error(`Video '${video_id}' does not exist or has been removed from Kick.com.`);
+      }
+      throw error;
     }
 
     return {
