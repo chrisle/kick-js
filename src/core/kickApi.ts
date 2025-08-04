@@ -5,21 +5,24 @@ import type { VideoInfo } from "../types/video";
 import { authenticator } from "otplib";
 import type { AuthenticationSettings } from "../types/client";
 
-const setupPuppeteer = async () => {
+const setupPuppeteer = async (puppeteerOptions?: any) => {
   const puppeteerExtra = puppeteer.use(StealthPlugin());
-  const browser = await puppeteerExtra.launch({
+  const defaultOptions = {
     headless: true,
     defaultViewport: null,
     args: ["--start-maximized"],
-  });
+  };
+  const mergedOptions = { ...defaultOptions, ...puppeteerOptions };
+  const browser = await puppeteerExtra.launch(mergedOptions);
   const page = await browser.newPage();
   return { browser, page };
 };
 
 export const getChannelData = async (
   channel: string,
+  puppeteerOptions?: any,
 ): Promise<KickChannelInfo | null> => {
-  const { browser, page } = await setupPuppeteer();
+  const { browser, page } = await setupPuppeteer(puppeteerOptions);
 
   try {
     const response = await page.goto(
@@ -53,8 +56,9 @@ export const getChannelData = async (
 
 export const getVideoData = async (
   video_id: string,
+  puppeteerOptions?: any,
 ): Promise<VideoInfo | null> => {
-  const { browser, page } = await setupPuppeteer();
+  const { browser, page } = await setupPuppeteer(puppeteerOptions);
 
   try {
     const response = await page.goto(
@@ -90,7 +94,7 @@ export const authentication = async ({
   username,
   password,
   otp_secret,
-}: AuthenticationSettings): Promise<{
+}: AuthenticationSettings, puppeteerOptions?: any): Promise<{
   bearerToken: string;
   xsrfToken: string;
   cookies: string;
@@ -102,10 +106,12 @@ export const authentication = async ({
   let isAuthenticated = false;
 
   const puppeteerExtra = puppeteer.use(StealthPlugin());
-  const browser = await puppeteerExtra.launch({
+  const defaultOptions = {
     headless: true,
     defaultViewport: null,
-  });
+  };
+  const mergedOptions = { ...defaultOptions, ...puppeteerOptions };
+  const browser = await puppeteerExtra.launch(mergedOptions);
 
   const page = await browser.newPage();
   let requestData: any[] = [];

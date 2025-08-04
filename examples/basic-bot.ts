@@ -1,7 +1,14 @@
-import { createClient, type MessageData } from "@retconned/kick-js";
+import { createClient, type MessageData } from "../src/index.js";
 import "dotenv/config";
 
-const client = createClient("xqc", { logger: true, readOnly: false });
+const client = createClient("xqc", { 
+  logger: true, 
+  readOnly: false,
+  puppeteerOptions: {
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  }
+});
 
 // client.login({
 //   type: "login",
@@ -45,7 +52,7 @@ client.on("ChatMessage", async (message: MessageData) => {
   }
 });
 
-client.on("Subscription", async (subscription) => {
+client.on("Subscription", async (subscription: any) => {
   console.log(`New subscription 💰 : ${subscription.username}`);
 });
 

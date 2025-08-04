@@ -6,6 +6,12 @@ export interface ClientOptions {
   plainEmote?: boolean;
   logger?: boolean;
   readOnly?: boolean;
+  puppeteerOptions?: {
+    headless?: boolean;
+    args?: string[];
+    defaultViewport?: any;
+    [key: string]: any;
+  };
 }
 
 export interface Video {
@@ -27,6 +33,10 @@ export interface Video {
 
 export interface KickClient {
   on: (event: string, listener: (...args: any[]) => void) => void;
+  off: (event: string, listener: (...args: any[]) => void) => void;
+  removeAllListeners: (event?: string) => void;
+  listenerCount: (event: string) => number;
+  listeners: (event: string) => Function[];
   vod: (video_id: string) => Promise<Video>;
   login: (credentials: LoginOptions) => Promise<boolean>;
   user: {

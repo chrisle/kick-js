@@ -73,7 +73,7 @@ export const createClient = (
               username: credentials.username,
               password: credentials.password,
               otp_secret: credentials.otp_secret,
-            });
+            }, mergedOptions.puppeteerOptions);
 
           if (mergedOptions.logger) {
             console.log("Authentication tokens received, validating...");
@@ -133,7 +133,7 @@ export const createClient = (
         console.log(`Fetching channel data for: ${channelName}`);
       }
 
-      channelInfo = await getChannelData(channelName);
+      channelInfo = await getChannelData(channelName, mergedOptions.puppeteerOptions);
       if (!channelInfo) {
         throw new Error("Unable to fetch channel data");
       }
@@ -208,6 +208,22 @@ export const createClient = (
     emitter.on(event, listener);
   };
 
+  const off = (event: string, listener: (...args: any[]) => void) => {
+    emitter.off(event, listener);
+  };
+
+  const removeAllListeners = (event?: string) => {
+    emitter.removeAllListeners(event);
+  };
+
+  const listenerCount = (event: string) => {
+    return emitter.listenerCount(event);
+  };
+
+  const listeners = (event: string) => {
+    return emitter.listeners(event);
+  };
+
   const getUser = () =>
     channelInfo
       ? {
@@ -218,7 +234,7 @@ export const createClient = (
       : null;
 
   const vod = async (video_id: string) => {
-    videoInfo = await getVideoData(video_id);
+    videoInfo = await getVideoData(video_id, mergedOptions.puppeteerOptions);
 
     if (!videoInfo) {
       throw new Error("Unable to fetch video data");
@@ -558,6 +574,10 @@ export const createClient = (
   return {
     login,
     on,
+    off,
+    removeAllListeners,
+    listenerCount,
+    listeners,
     get user() {
       return getUser();
     },
