@@ -1,5 +1,22 @@
 # @retconned/kickjs
 
+## 0.5.4
+
+### Minor Changes
+
+- 25e4780: feat: add EventEmitter methods and Puppeteer configuration options
+  - Add off, removeAllListeners, listenerCount, and listeners methods to KickClient
+  - Add puppeteerOptions to ClientOptions for custom Puppeteer configuration  
+  - Update all Puppeteer functions to accept custom options
+
+### Patch Changes
+
+- a818745: fix(tests): fix mock test failures and prevent real API calls
+  - Fix Cloudflare 403 error handling in getChannelData and getVideoData to properly re-throw errors instead of returning null
+  - Add comprehensive test suite with mock and integration tests
+  - Add missing getChannelData mock to Client Creation tests to prevent real API calls during mock testing
+  - All mock tests now pass (54/54) without making network requests
+
 ## 0.5.3
 
 ### Patch Changes
