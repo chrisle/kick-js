@@ -11,6 +11,11 @@ import type {
 } from "../types/events";
 import { parseJSON } from "../utils/utils";
 
+/**
+ * Parse incoming WebSocket message and return typed event data
+ * @param message - Raw WebSocket message string
+ * @returns Parsed message with type and data
+ */
 export const parseMessage = (message: string) => {
   try {
     const messageEventJSON = parseJSON<MessageEvent>(message);
@@ -65,7 +70,7 @@ export const parseMessage = (message: string) => {
       }
 
       default: {
-        console.log("Unknown event type:", messageEventJSON.event);
+        console.debug("Unknown event type:", messageEventJSON.event);
         return null;
       }
     }

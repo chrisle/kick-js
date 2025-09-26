@@ -1,6 +1,6 @@
 {
   "name": "@retconned/kick-js",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "description": "A typescript bot interface for kick.com",
   "keywords": [
     "Kick.com",
@@ -35,30 +35,40 @@
     "lint:check": "eslint \"src/**/*.{ts,js}\"",
     "lint:fix": "eslint --fix \"src/**/*.{ts,js}\"",
     "check-exports": "attw --pack . --ignore-rules=cjs-resolves-to-esm",
-
+    "test": "vitest run",
+    "test:integration": "cross-env INTEGRATION_TEST=true vitest run",
+    "test:integration:headful": "cross-env INTEGRATION_TEST=true HEADLESS=false vitest run",
+    "getOauthToken": "tsx src/utils/getOauthToken.ts",
     "dev": "vitest",
-
     "checks": "npm run format:fix && npm run lint:ts && npm run check-exports && npm run build",
-
     "release:version": "changeset version",
     "release:publish": "changeset publish",
     "release:local": "npm run release:version && npm run release:publish",
-
     "prepublishOnly": "npm run checks"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.js",
-      "default": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
+  "types": "./dist/index.d.ts",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.15.4",
     "@changesets/cli": "^2.27.8",
     "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^8.4.0",
+    "@vitest/coverage-v8": "^2.1.1",
+    "cross-env": "^10.0.0",
+    "dotenv": "^17.2.2",
     "eslint": "8",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.3",

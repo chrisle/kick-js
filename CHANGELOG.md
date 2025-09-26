@@ -1,5 +1,18 @@
 # @retconned/kickjs
 
+## 0.6.0
+
+### Minor Changes
+
+- feat: add multi-auth support, OAuth implementation, and comprehensive test suite
+  - Added automatic OAuth token refresh functionality
+  - Added support for all 7 OAuth scopes (user:read, channel:read, channel:write, chat:write, streamkey:read, events:subscribe, moderation:ban)
+  - Added comprehensive public API methods (categories, channels, events, livestreams, users, moderation)
+  - Added cross-channel messaging support
+  - Added comprehensive chatbot example with OAuth authentication
+  - Updated README with detailed Quick Start guide and feature list
+  - Added 147+ tests with comprehensive coverage
+
 ## 0.5.4
 
 ### Patch Changes

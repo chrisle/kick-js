@@ -3,6 +3,11 @@ import { URLSearchParams } from "url";
 
 const BASE_URL = "wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679";
 
+/**
+ * Create WebSocket connection to Kick.com chat via Pusher
+ * @param chatroomId - ID of the chatroom to connect to
+ * @returns WebSocket instance connected to the chatroom
+ */
 export const createWebSocket = (chatroomId: number): WebSocket => {
   const urlParams = new URLSearchParams({
     protocol: "7",

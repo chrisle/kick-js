@@ -18,6 +18,11 @@ export interface RequestConfig {
   channelSlug: string;
 }
 
+/**
+ * Create HTTP headers for Kick.com API requests
+ * @param config - Request configuration with bearer token, cookies, and channel slug
+ * @returns AxiosHeaders object with all required headers
+ */
 export const createHeaders = ({
   bearerToken,
   cookies,
@@ -39,6 +44,14 @@ export const createHeaders = ({
   return headers;
 };
 
+/**
+ * Make HTTP request to Kick.com API with proper error handling
+ * @param method - HTTP method (get, post, put, delete)
+ * @param url - Request URL
+ * @param headers - Request headers
+ * @param data - Optional request body data
+ * @returns Promise resolving to response data or null if failed
+ */
 export const makeRequest = async <T>(
   method: "get" | "post" | "put" | "delete",
   url: string,
