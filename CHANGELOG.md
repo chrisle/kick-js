@@ -1,5 +1,17 @@
 # @retconned/kickjs
 
+## 0.7.0
+
+### Minor Changes
+
+- feat: add featured livestreams API with language and sorting support
+  - Added `getFeaturedLivestreams()` function to fetch featured live channels
+  - Support for multiple language codes (e.g., 'en', 'sq,ar')
+  - Support for sorting: 'viewers_high_to_low', 'viewers_low_to_high', 'recommended'
+  - Added `KickFeaturedLivestreams` and `FeaturedLivestream` types
+  - Added WebSocket integration test that connects to real live channels
+  - Integration test validates real-time chat message reception
+
 ## 0.6.0
 
 ### Minor Changes
