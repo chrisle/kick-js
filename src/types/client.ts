@@ -36,6 +36,12 @@ export interface ClientOptions {
     defaultViewport?: unknown;
     [key: string]: unknown;
   };
+  onTokenRefresh?: (tokens: {
+    access_token: string;
+    refresh_token?: string;
+    expires_in: number;
+    token_type: string;
+  }) => void | Promise<void>;
 }
 
 export interface Video {
@@ -61,6 +67,7 @@ export interface KickClient {
   removeAllListeners: (event?: string) => void;
   listenerCount: (event: string) => number;
   listeners: (event: string) => ((...args: unknown[]) => void)[];
+  disconnect: () => void;
   vod: (video_id: string) => Promise<VideoInfo | null>;
   login: (credentials: LoginOptions) => Promise<boolean>;
   user: {

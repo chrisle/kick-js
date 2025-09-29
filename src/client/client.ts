@@ -97,12 +97,12 @@ interface MessageData {
  * - Public APIs (require authentication)
  * - Private APIs (use Puppeteer)
  *
- * @param channelName - Name of the channel to connect to
+ * @param channelToJoin - Name of the channel to connect to
  * @param options - Optional client configuration options
  * @returns KickClient instance with methods for interacting with chat and API
  */
 export const createClient = (
-  channelName: string,
+  channelToJoin: string,
   options: ClientOptions = {},
 ): KickClient => {
   // State
@@ -168,8 +168,19 @@ export const createClient = (
           oauthRefreshToken = newTokens.refresh_token;
         }
 
-        // Update .env file
-        updateEnvTokens(newTokens);
+        // Call user-provided callback if available
+        if (mergedOptions.onTokenRefresh) {
+          try {
+            await mergedOptions.onTokenRefresh(newTokens);
+          } catch (callbackError) {
+            if (mergedOptions.logger) {
+              console.error("⚠️  Token refresh callback failed:", callbackError);
+            }
+          }
+        } else {
+          // Fallback: Update .env file (legacy behavior)
+          updateEnvTokens(newTokens);
+        }
 
         if (mergedOptions.logger) {
           console.debug("✅ OAuth token refreshed successfully");
@@ -194,6 +205,84 @@ export const createClient = (
 
     // Try to refresh token if needed
     await refreshTokenIfNeeded();
+  };
+
+  const withTokenRefreshRetry = async <T>(
+    apiCall: () => Promise<T>,
+  ): Promise<T> => {
+    try {
+      return await apiCall();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      if (
+        errorMessage.includes("401") ||
+        errorMessage.toLowerCase().includes("unauthorized")
+      ) {
+        if (mergedOptions.logger) {
+          console.debug("⚠️  Received 401, attempting token refresh...");
+        }
+
+        if (
+          !oauthClientId ||
+          !oauthClientSecret ||
+          !oauthRefreshToken ||
+          !tokenExpiresIn ||
+          !tokenUpdatedAt
+        ) {
+          throw new Error(
+            "Cannot refresh token: OAuth credentials not available",
+          );
+        }
+
+        try {
+          const newTokens = await refreshOAuthToken(
+            oauthClientId,
+            oauthClientSecret,
+            oauthRefreshToken,
+          );
+
+          publicBearerToken = newTokens.access_token;
+          tokenExpiresIn = newTokens.expires_in;
+          tokenUpdatedAt = new Date().toISOString();
+
+          if (newTokens.refresh_token) {
+            oauthRefreshToken = newTokens.refresh_token;
+          }
+
+          if (mergedOptions.onTokenRefresh) {
+            try {
+              await mergedOptions.onTokenRefresh(newTokens);
+            } catch (callbackError) {
+              if (mergedOptions.logger) {
+                console.error(
+                  "⚠️  Token refresh callback failed:",
+                  callbackError,
+                );
+              }
+            }
+          } else {
+            updateEnvTokens(newTokens);
+          }
+
+          if (mergedOptions.logger) {
+            console.debug("✅ Token refreshed, retrying API call...");
+          }
+
+          return await apiCall();
+        } catch (refreshError) {
+          if (mergedOptions.logger) {
+            console.error("❌ Token refresh failed:", refreshError);
+          }
+          throw new Error(
+            `Failed to refresh token after 401: ${refreshError instanceof Error ? refreshError.message : String(refreshError)}`,
+          );
+        }
+      }
+
+      throw error;
+    }
   };
 
   const checkPrivateAuth = () => {
@@ -241,7 +330,7 @@ export const createClient = (
               password: loginCreds.password,
               otp_secret: loginCreds.otp_secret,
             },
-            channelName,
+            channelToJoin,
             mergedOptions.puppeteerOptions as Parameters<
               typeof authentication
             >[2],
@@ -325,16 +414,16 @@ export const createClient = (
   const initialize = async () => {
     try {
       if (mergedOptions.logger) {
-        console.debug(`Fetching channel data for: ${channelName}`);
+        console.debug(`Fetching channel data for: ${channelToJoin}`);
       }
 
       channelInfo = await getChannelData(
-        channelName,
+        channelToJoin,
         mergedOptions.puppeteerOptions as Parameters<typeof getChannelData>[1],
       );
 
       if (!channelInfo) {
-        throw new Error(`Unable to fetch data for channel '${channelName}'`);
+        throw new Error(`Unable to fetch data for channel '${channelToJoin}'`);
       }
 
       if (mergedOptions.logger) {
@@ -359,7 +448,7 @@ export const createClient = (
 
       socket.on("open", () => {
         if (mergedOptions.logger) {
-          console.debug(`Connected to channel: ${channelName}`);
+          console.debug(`Connected to channel: ${channelToJoin}`);
         }
         emitter.emit("ready", getUser());
       });
@@ -388,7 +477,11 @@ export const createClient = (
   };
 
   const removeAllListeners = (event?: string) => {
-    emitter.removeAllListeners(event);
+    if (event === undefined) {
+      emitter.removeAllListeners();
+    } else {
+      emitter.removeAllListeners(event);
+    }
   };
 
   const listenerCount = (event: string) => {
@@ -397,6 +490,23 @@ export const createClient = (
 
   const listeners = (event: string): ((...args: unknown[]) => void)[] => {
     return emitter.listeners(event) as ((...args: unknown[]) => void)[];
+  };
+
+  const disconnect = () => {
+    if (socket) {
+      try {
+        // Only close if socket is in OPEN or CLOSING state
+        if (socket.readyState === 1 || socket.readyState === 2) {
+          socket.close();
+        }
+        socket = null;
+      } catch (error) {
+        if (mergedOptions.logger) {
+          console.error("Error closing WebSocket:", error);
+        }
+      }
+    }
+    removeAllListeners();
   };
 
   // Private API methods
@@ -427,10 +537,8 @@ export const createClient = (
       broadcasterUserId = targetChannelInfo.user_id;
     }
 
-    return sendChatMessage(
-      messageContent,
-      publicBearerToken!,
-      broadcasterUserId,
+    return withTokenRefreshRetry(() =>
+      sendChatMessage(messageContent, publicBearerToken!, broadcasterUserId),
     );
   };
 
@@ -490,6 +598,7 @@ export const createClient = (
     removeAllListeners,
     listenerCount,
     listeners,
+    disconnect,
 
     // User info
     get user() {
@@ -556,47 +665,65 @@ export const createClient = (
     // Public API - Categories
     searchCategories: async (query: string, page?: number) => {
       await checkPublicAuth();
-      return searchCategories(publicBearerToken!, query, page);
+      return withTokenRefreshRetry(() =>
+        searchCategories(publicBearerToken!, query, page),
+      );
     },
     getCategory: async (categoryId: number) => {
       await checkPublicAuth();
-      return getCategory(publicBearerToken!, categoryId);
+      return withTokenRefreshRetry(() =>
+        getCategory(publicBearerToken!, categoryId),
+      );
     },
 
     // Public API - Channels
     getChannels: async (options?: Parameters<typeof getChannels>[1]) => {
       await checkPublicAuth();
-      return getChannels(publicBearerToken!, options);
+      return withTokenRefreshRetry(() =>
+        getChannels(publicBearerToken!, options),
+      );
     },
     updateChannel: async (options: Parameters<typeof updateChannel>[1]) => {
       await checkPublicAuth();
-      return updateChannel(publicBearerToken!, options);
+      return withTokenRefreshRetry(() =>
+        updateChannel(publicBearerToken!, options),
+      );
     },
 
     // Public API - Events
     getEventSubscriptions: async () => {
       await checkPublicAuth();
-      return getEventSubscriptions(publicBearerToken!);
+      return withTokenRefreshRetry(() =>
+        getEventSubscriptions(publicBearerToken!),
+      );
     },
     createEventSubscription: async (
       data: Parameters<typeof createEventSubscription>[1],
     ) => {
       await checkPublicAuth();
-      return createEventSubscription(publicBearerToken!, data);
+      return withTokenRefreshRetry(() =>
+        createEventSubscription(publicBearerToken!, data),
+      );
     },
     deleteEventSubscriptions: async (subscriptionIds: string[]) => {
       await checkPublicAuth();
-      return deleteEventSubscriptions(publicBearerToken!, subscriptionIds);
+      return withTokenRefreshRetry(() =>
+        deleteEventSubscriptions(publicBearerToken!, subscriptionIds),
+      );
     },
 
     // Public API - Livestreams
     getLivestreams: async (options?: Parameters<typeof getLivestreams>[1]) => {
       await checkPublicAuth();
-      return getLivestreams(publicBearerToken!, options);
+      return withTokenRefreshRetry(() =>
+        getLivestreams(publicBearerToken!, options),
+      );
     },
     getLivestreamsStats: async () => {
       await checkPublicAuth();
-      return getLivestreamsStats(publicBearerToken!);
+      return withTokenRefreshRetry(() =>
+        getLivestreamsStats(publicBearerToken!),
+      );
     },
 
     // Public API - Moderation
@@ -607,28 +734,34 @@ export const createClient = (
       reason?: string,
     ) => {
       await checkPublicAuth();
-      return apiBanUser(
-        publicBearerToken!,
-        broadcasterUserId,
-        userId,
-        durationInMinutes,
-        reason,
+      return withTokenRefreshRetry(() =>
+        apiBanUser(
+          publicBearerToken!,
+          broadcasterUserId,
+          userId,
+          durationInMinutes,
+          reason,
+        ),
       );
     },
     unbanUserPublic: async (broadcasterUserId: number, userId: number) => {
       await checkPublicAuth();
-      return apiUnbanUser(publicBearerToken!, broadcasterUserId, userId);
+      return withTokenRefreshRetry(() =>
+        apiUnbanUser(publicBearerToken!, broadcasterUserId, userId),
+      );
     },
 
     // Public API - Other
     getPublicKey: () => getPublicKey(),
     introspectToken: async () => {
       await checkPublicAuth();
-      return introspectToken(publicBearerToken!);
+      return withTokenRefreshRetry(() =>
+        introspectToken(publicBearerToken!),
+      );
     },
     getUsers: async (userIds: number[]) => {
       await checkPublicAuth();
-      return getUsers(publicBearerToken!, userIds);
+      return withTokenRefreshRetry(() => getUsers(publicBearerToken!, userIds));
     },
   };
 };

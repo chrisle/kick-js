@@ -7,7 +7,7 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { authenticator } from "otplib";
 import type { LoginCredentials } from "../../types/client";
-import type { PuppeteerLaunchOptions, Browser, Page } from "puppeteer";
+import type { LaunchOptions, Browser, Page } from "puppeteer";
 
 /**
  * Authenticate with Kick.com using login credentials
@@ -19,7 +19,7 @@ import type { PuppeteerLaunchOptions, Browser, Page } from "puppeteer";
 export const authentication = async (
   { username, password, otp_secret }: LoginCredentials,
   channelName?: string,
-  puppeteerOptions?: PuppeteerLaunchOptions,
+  puppeteerOptions?: LaunchOptions,
 ): Promise<{
   bearerToken: string;
   xsrfToken: string;

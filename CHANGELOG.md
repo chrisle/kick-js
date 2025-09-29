@@ -1,5 +1,28 @@
 # @retconned/kickjs
 
+## 0.8.0
+
+### Minor Changes
+
+- feat: add `onTokenRefresh` callback option to ClientOptions
+  - Allows custom handling of OAuth token refresh events
+  - Receives new token object: `{ access_token, refresh_token?, expires_in, token_type }`
+  - Falls back to legacy `updateEnvTokens` behavior when not provided
+  - Supports both sync and async callbacks with error handling
+
+- feat: add automatic 401 error handling with token refresh retry
+  - All public API methods now automatically detect 401/unauthorized errors
+  - Automatically refreshes OAuth tokens using refresh token when 401 occurs
+  - Retries the original API call with the new token
+  - Comprehensive error handling for refresh failures and missing credentials
+  - Enhanced disconnect method with proper WebSocket state checking
+
+- feat: improve token refresh reliability and user experience
+  - Enhanced `removeAllListeners()` to properly clear all event listeners
+  - Added comprehensive test coverage for disconnect functionality
+  - Added extensive test coverage for 401 retry scenarios and token refresh callbacks
+  - Fixed token refresh logic to handle edge cases and provide better error messages
+
 ## 0.7.0
 
 ### Minor Changes

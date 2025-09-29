@@ -3,7 +3,7 @@
  */
 
 import type { VideoInfo } from "../../types/video";
-import type { PuppeteerLaunchOptions, Browser } from "puppeteer";
+import type { LaunchOptions, Browser } from "puppeteer";
 import { setupPuppeteer } from "./utils";
 
 /**
@@ -15,7 +15,7 @@ import { setupPuppeteer } from "./utils";
  */
 export const getVideoData = async (
   video_id: string,
-  puppeteerOptions?: PuppeteerLaunchOptions,
+  puppeteerOptions?: LaunchOptions,
 ): Promise<VideoInfo | null> => {
   let browser: Browser | undefined;
   try {

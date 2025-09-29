@@ -4,7 +4,7 @@
 
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import type { PuppeteerLaunchOptions } from "puppeteer";
+import type { LaunchOptions } from "puppeteer";
 
 /**
  * Set up Puppeteer browser with stealth plugin
@@ -12,7 +12,7 @@ import type { PuppeteerLaunchOptions } from "puppeteer";
  * @returns Browser and page instances
  */
 export const setupPuppeteer = async (
-  puppeteerOptions?: PuppeteerLaunchOptions,
+  puppeteerOptions?: LaunchOptions,
 ) => {
   // Default to headless mode unless explicitly set to false
   // This can be overridden by HEADLESS=false environment variable or puppeteerOptions

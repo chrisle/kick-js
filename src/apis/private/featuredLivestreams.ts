@@ -3,7 +3,7 @@
  */
 
 import type { KickFeaturedLivestreams } from "../../types/livestreams";
-import type { PuppeteerLaunchOptions, Browser } from "puppeteer";
+import type { LaunchOptions, Browser } from "puppeteer";
 import { setupPuppeteer } from "./utils";
 
 export type FeaturedLivestreamsSort =
@@ -14,7 +14,7 @@ export type FeaturedLivestreamsSort =
 export interface GetFeaturedLivestreamsOptions {
   language?: string;
   sort?: FeaturedLivestreamsSort;
-  puppeteerOptions?: PuppeteerLaunchOptions;
+  puppeteerOptions?: LaunchOptions;
 }
 
 /**

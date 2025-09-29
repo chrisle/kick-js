@@ -29,6 +29,13 @@ vi.mock("../utils/utils", () => ({
   validateCredentials: vi.fn(),
 }));
 
+// Mock token refresh utilities
+vi.mock("../utils/tokenRefresh", () => ({
+  refreshOAuthToken: vi.fn(),
+  updateEnvTokens: vi.fn(),
+  shouldRefreshToken: vi.fn(() => false),
+}));
+
 // Mock WebSocket
 vi.mock("../core/websocket", () => ({
   createWebSocket: vi.fn(() => ({
@@ -46,6 +53,14 @@ import { sendChatMessage } from "../apis/public/chat";
 describeWithoutTokens("KickClient Error Handling (Mock Tests)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Clear OAuth environment variables to prevent token refresh logic
+    delete process.env.KICK_ACCESS_TOKEN;
+    delete process.env.KICK_CLIENT_ID;
+    delete process.env.KICK_CLIENT_SECRET;
+    delete process.env.KICK_REFRESH_TOKEN;
+    delete process.env.KICK_EXPIRES_IN;
+    delete process.env.KICK_TOKEN_UPDATED;
   });
 
   afterEach(() => {

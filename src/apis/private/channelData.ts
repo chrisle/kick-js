@@ -3,7 +3,7 @@
  */
 
 import type { KickChannelInfo } from "../../types/channels";
-import type { PuppeteerLaunchOptions, Browser } from "puppeteer";
+import type { LaunchOptions, Browser } from "puppeteer";
 import { setupPuppeteer } from "./utils";
 
 /**
@@ -15,7 +15,7 @@ import { setupPuppeteer } from "./utils";
  */
 export const getChannelData = async (
   channel: string,
-  puppeteerOptions?: PuppeteerLaunchOptions,
+  puppeteerOptions?: LaunchOptions,
 ): Promise<KickChannelInfo | null> => {
   let browser: Browser | undefined;
   try {

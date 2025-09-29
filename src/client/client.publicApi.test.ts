@@ -16,6 +16,11 @@ vi.mock("../apis/public/moderation");
 vi.mock("../apis/public/publicKey");
 vi.mock("../apis/public/users");
 vi.mock("../utils/utils", () => ({ validateCredentials: vi.fn() }));
+vi.mock("../utils/tokenRefresh", () => ({
+  refreshOAuthToken: vi.fn(),
+  updateEnvTokens: vi.fn(),
+  shouldRefreshToken: vi.fn(() => false),
+}));
 vi.mock("../core/websocket", () => ({
   createWebSocket: vi.fn(() => ({ on: vi.fn(), close: vi.fn() })),
 }));
@@ -42,6 +47,14 @@ describeWithoutTokens("KickClient Public API Methods", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Clear OAuth environment variables to prevent token refresh logic
+    delete process.env.KICK_ACCESS_TOKEN;
+    delete process.env.KICK_CLIENT_ID;
+    delete process.env.KICK_CLIENT_SECRET;
+    delete process.env.KICK_REFRESH_TOKEN;
+    delete process.env.KICK_EXPIRES_IN;
+    delete process.env.KICK_TOKEN_UPDATED;
 
     const mockChannelInfo: KickChannelInfo = {
       id: 123,
