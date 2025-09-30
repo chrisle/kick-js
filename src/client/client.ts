@@ -76,7 +76,7 @@ export { getPublicKey } from "../apis/public/publicKey";
 export { introspectToken, getUsers } from "../apis/public/users";
 
 // Re-export private APIs for direct use
-export { getChannelData } from "../apis/private/channelData";
+export { getChannelData, setChannelDataProvider } from "../apis/private/channelData";
 export { getVideoData } from "../apis/private/videoData";
 export {
   deleteMessage as deleteMessageDirect,
@@ -446,18 +446,41 @@ export const createClient = (
         }
       });
 
-      socket.on("open", () => {
-        if (mergedOptions.logger) {
-          console.debug(`Connected to channel: ${channelToJoin}`);
-        }
-        emitter.emit("ready", getUser());
-      });
-
+      // Set up error handler first (outside promise to persist)
       socket.on("error", (error) => {
         if (mergedOptions.logger) {
           console.error("WebSocket error:", error);
         }
         emitter.emit("error", error);
+      });
+
+      // Wait for WebSocket to open before resolving initialize()
+      // This prevents race conditions where 'ready' event fires before listeners are registered
+      await new Promise<void>((resolve, reject) => {
+        if (!socket) {
+          reject(new Error('WebSocket not initialized'));
+          return;
+        }
+
+        const timeout = setTimeout(() => {
+          reject(new Error('WebSocket connection timeout'));
+        }, 30000);
+
+        socket.on("open", () => {
+          clearTimeout(timeout);
+          if (mergedOptions.logger) {
+            console.debug(`Connected to channel: ${channelToJoin}`);
+          }
+          // Emit 'ready' event for backwards compatibility
+          emitter.emit("ready", getUser());
+          // Resolve the promise so login() can complete
+          resolve();
+        });
+
+        socket.once("error", (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
       });
     } catch (error) {
       if (mergedOptions.logger) {

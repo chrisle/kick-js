@@ -1,5 +1,15 @@
 # @retconned/kickjs
 
+## 0.8.1
+
+### Patch Changes
+
+- fix: resolve race condition in Puppeteer authentication
+  - Add detailed logging for browser launch and navigation timing
+  - Log response headers to detect Cloudflare blocking
+  - Log page content to diagnose HTML vs JSON responses
+  - Improve debugging capabilities in Docker environments
+
 ## 0.8.0
 
 ### Minor Changes

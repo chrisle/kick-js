@@ -7,7 +7,7 @@
 export { authentication } from "./authentication";
 
 // Channel Data Scraping
-export { getChannelData } from "./channelData";
+export { getChannelData, setChannelDataProvider } from "./channelData";
 
 // Video Data Scraping
 export { getVideoData } from "./videoData";

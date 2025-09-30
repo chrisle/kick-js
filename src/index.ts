@@ -3,6 +3,7 @@ import type { MessageData } from "./types/events.js";
 import type { KickClient } from "./types/client.js";
 import { getFeaturedLivestreams } from "./apis/private/featuredLivestreams";
 import type { GetFeaturedLivestreamsOptions } from "./apis/private/featuredLivestreams";
+import { setChannelDataProvider } from "./apis/private/channelData";
 
-export { createClient, getFeaturedLivestreams };
+export { createClient, getFeaturedLivestreams, setChannelDataProvider };
 export type { MessageData, GetFeaturedLivestreamsOptions, KickClient };
